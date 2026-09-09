@@ -143,7 +143,23 @@ input[type=text],input[type=number],input[type=time],input[type=date],select{fon
 .mo-chip{border-radius:5px;padding:2px 5px;font-size:10px;font-weight:600;margin-bottom:2px;border-left:3px solid;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:3px;}
 .mo-chip:hover{opacity:.9;}
 
-/* ───── ADD SHIFT MODAL ───── */
+/* ───── TEMPLATE EDITOR GRID ───── */
+.stpl-scroll{max-height:min(62vh,640px);overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--bg-page);}
+.stpl-grid{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:8px;padding:0 8px 8px;min-width:1060px;}
+.stpl-dayhead{position:sticky;top:0;z-index:5;background:var(--bg-page);padding:10px 4px 8px;text-align:center;border-bottom:1px solid var(--border);}
+.stpl-dayname{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);}
+.stpl-col{display:flex;flex-direction:column;gap:7px;}
+.stpl-open{border:1.5px dashed;border-radius:10px;padding:9px;background:repeating-linear-gradient(45deg,rgba(255,255,255,.65),rgba(255,255,255,.65) 6px,rgba(0,0,0,.015) 6px,rgba(0,0,0,.015) 12px);}
+.stpl-open-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:4px;margin-bottom:3px;}
+.stpl-time{font-size:12px;font-weight:700;margin-bottom:1px;}
+.stpl-dept{font-size:10.5px;opacity:.75;margin-bottom:7px;}
+.stpl-fill-btn{width:100%;padding:6px;font-size:11.5px;font-weight:600;border-radius:7px;border:1px solid;background:#fff;cursor:pointer;}
+.stpl-fill-btn:hover{filter:brightness(.97);}
+.stpl-filled{border-radius:10px;padding:9px;border-left:4px solid;cursor:pointer;position:relative;}
+.stpl-filled:hover{filter:brightness(.98);}
+.stpl-filled-name{font-size:12.5px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;}
+.stpl-filled-time{font-size:11px;font-weight:500;opacity:.85;}
+.stpl-x{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #fff;line-height:1;}
 .as-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
 .as-head h3{font-size:16px;font-weight:700;}
 .as-close{background:none;border:none;font-size:22px;line-height:1;color:var(--text-tertiary);cursor:pointer;padding:0 2px;}
@@ -734,15 +750,39 @@ create policy "anon delete" on scheduler_kv for delete using (true);</pre>
 </div>
 
 <div class="modal-wrap" id="modal-schedtpl">
-  <div class="modal" style="width:520px;">
+  <div class="modal" style="width:min(1240px,96vw);">
     <h3 id="stpl-title">Create template</h3>
-    <div class="fr"><label>Template name</label><input type="text" id="stpl-name" placeholder="e.g. Standard Week" style="width:100%;"/></div>
-    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Assign an employee to each shift slot you want fixed. Leave a slot on "— Auto —" to let the generator fill it. Slots you don't touch stay auto.</div>
-    <div id="stpl-slots" style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px;"></div>
+    <div class="fr" style="max-width:340px;"><label>Template name</label><input type="text" id="stpl-name" placeholder="e.g. Standard Week" style="width:100%;"/></div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Click <strong>+ Fill shift</strong> on any slot to pin an employee who always works that day and time. Leave slots <strong>OPEN</strong> and the generator will fill them automatically. Dates aren't used here — only the day of the week.</div>
+    <div id="stpl-slots" class="stpl-scroll"></div>
     <div class="ma" style="margin-top:12px;">
       <button class="btn sm danger" id="stpl-del" style="margin-right:auto;display:none;" onclick="deleteSchedTemplate()">Delete template</button>
       <button class="btn sm" onclick="closeModal('schedtpl')">Cancel</button>
       <button class="btn sm primary-outline" onclick="saveSchedTemplate()">Save template</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-wrap" id="modal-stplfill">
+  <div class="modal" style="width:430px;">
+    <div class="as-head">
+      <h3 id="stplfill-title" style="margin:0;">Fill Shift</h3>
+      <button class="as-close" onclick="closeModal('stplfill')" title="Close">&times;</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;" id="stplfill-sub"></div>
+    <div class="fr" style="position:relative;">
+      <label>Employee</label>
+      <button type="button" class="as-select" id="stplfill-select-btn" onclick="toggleStplFillDropdown(event)">
+        <span id="stplfill-select-label" class="as-select-placeholder">Select employee…</span>
+        <span class="as-caret">▾</span>
+      </button>
+      <div class="as-dd" id="stplfill-dd"></div>
+    </div>
+    <div id="stplfill-warn" style="font-size:11.5px;margin:-4px 0 10px;"></div>
+    <div class="ma">
+      <button class="btn sm danger" id="stplfill-clear" style="margin-right:auto;display:none;" onclick="clearStplSlot()">Clear slot</button>
+      <button class="btn sm" onclick="closeModal('stplfill')">Cancel</button>
+      <button class="btn sm primary-outline" onclick="saveStplSlot()">Save</button>
     </div>
   </div>
 </div>
@@ -926,9 +966,9 @@ const ROSTER_REPAIR_MAP={"kayden":{"defaultRole":1,"deptIds":[1],"minHours":36,"
 const ROSTER_REMOVED_NAMES=["christine fellner","derek bassett","haylie youngblood","jaxon gurr","kim howard","syd lynn","ty williams"];
 let roles=[], members=[], shiftTemplates=[], nMId=34, nRId=5, nTId=98;
 let timeoffs=[], schedule={}, histMap={}, activeHistId=null;
-const APP_VERSION='v1.7';
+const APP_VERSION='v1.8';
 const APP_VERSION_DATE='2026-09-09';
-const APP_VERSION_NOTES='Time-off date ranges · Filter All toggle · Days Scheduled · By Role view · Total Hours breakdown · Schedule templates';
+const APP_VERSION_NOTES='Template grid editor · Time-off date ranges · Filter All toggle · Days Scheduled · By Role view · Total Hours breakdown · Schedule templates';
 let calView='week';
 let scheduleTemplates=[], nSTId=1, editingSchedTemplate=null;
 let currentSection='schedule';
@@ -1154,41 +1194,168 @@ function openGenChoice(){
 function genFromScratch(){closeModal('genchoice');genSchedule();}
 function genFromTemplate(id){const t=scheduleTemplates.find(x=>x.id===id);if(!t)return;closeModal('genchoice');genSchedule(t);}
 
+let stplDraft={};      // {templateId: memberId} being edited
+let stplFillSlotId=null, stplFillMemberId=null;
+
 function openSchedTemplateEditor(id){
   editingSchedTemplate=id;
   const t=id?scheduleTemplates.find(x=>x.id===id):null;
   document.getElementById('stpl-title').textContent=t?'Edit template':'Create template';
   document.getElementById('stpl-name').value=t?t.name:'';
   document.getElementById('stpl-del').style.display=t?'inline-flex':'none';
-  const assignMap={};if(t)(t.assignments||[]).forEach(a=>{assignMap[a.templateId]=a.memberId;});
-  // Build slot rows grouped by day then department order, using the shift templates
-  let html='';
+  stplDraft={};
+  if(t)(t.assignments||[]).forEach(a=>{stplDraft[a.templateId]=a.memberId;});
+  renderStplGrid();
+  document.getElementById('modal-schedtpl').classList.add('open');
+}
+function renderStplGrid(){
+  const el=document.getElementById('stpl-slots');
+  const anySlots=shiftTemplates.length>0;
+  if(!anySlots){el.innerHTML='<div style="padding:20px;font-size:12.5px;color:var(--text-secondary);">No shift slots defined. Add them in Shift Builder first.</div>';return;}
+  // sticky day headers row, then one column of slot cards per day
+  let heads='',cols='';
   for(let di=0;di<7;di++){
-    const daySlots=shiftTemplates.filter(s=>s.day===di).slice().sort((a,b)=>deptOrder(a.deptId)-deptOrder(b.deptId)||a.startH-b.startH);
-    if(!daySlots.length)continue;
-    html+=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-secondary);margin:8px 0 4px;">${DF[di]}</div>`;
+    heads+=`<div class="stpl-dayhead"><div class="stpl-dayname">${DS[di]}</div></div>`;
+    const daySlots=shiftTemplates.filter(s=>s.day===di).slice().sort((a,b)=>a.startH-b.startH);
+    let inner='';
     daySlots.forEach(s=>{
       const c=rc(s.deptId);
-      const opts=members.filter(m=>empTrainedFor(m,s.deptId)||m.floater||m.defaultRole===s.deptId)
-        .sort((a,b)=>a.name.localeCompare(b.name))
-        .map(m=>`<option value="${m.id}"${assignMap[s.id]===m.id?' selected':''}>${m.name}</option>`).join('');
-      html+=`<div style="display:flex;align-items:center;gap:8px;padding:4px 2px;">
-        <span style="display:inline-flex;align-items:center;gap:5px;min-width:150px;font-size:11.5px;"><span style="width:8px;height:8px;border-radius:2px;background:${c.border};"></span>${rn(s.deptId)} · ${s.label}</span>
-        <select data-tplid="${s.id}" class="stpl-slot-sel" style="flex:1;font-size:12px;"><option value="">— Auto —</option>${opts}</select>
-      </div>`;
+      const mid=stplDraft[s.id];
+      const m=mid?members.find(x=>x.id===mid):null;
+      if(m){
+        inner+=`<div class="stpl-filled" style="background:${c.bg};border-left-color:${c.border};color:${c.text};" onclick="openStplFill(${s.id})">
+          <div class="stpl-x" onclick="clearStplSlotInline(${s.id},event)" title="Clear">×</div>
+          <div class="stpl-filled-name">${m.name}${m.favorite?' ★':''}</div>
+          <div class="stpl-filled-time">${s.label}</div>
+          <div class="stpl-dept" style="margin:2px 0 0;">${rn(s.deptId)}</div>
+        </div>`;
+      } else {
+        inner+=`<div class="stpl-open" style="border-color:${c.border};color:${c.text};">
+          <div class="stpl-open-label">⚠ OPEN</div>
+          <div class="stpl-time">${s.label}</div>
+          <div class="stpl-dept">${rn(s.deptId)}</div>
+          <button type="button" class="stpl-fill-btn" style="border-color:${c.border};color:${c.text};" onclick="openStplFill(${s.id})">+ Fill shift</button>
+        </div>`;
+      }
     });
+    cols+=`<div class="stpl-col">${inner||'<div style="font-size:11px;color:var(--text-tertiary);text-align:center;padding:8px;">No shifts</div>'}</div>`;
   }
-  document.getElementById('stpl-slots').innerHTML=html||'<div style="font-size:12px;color:var(--text-secondary);">No shift slots defined. Add them in Shift Builder first.</div>';
-  document.getElementById('modal-schedtpl').classList.add('open');
+  el.innerHTML=`<div class="stpl-grid">${heads}</div><div class="stpl-grid" style="padding-top:8px;">${cols}</div>`;
+}
+/* ── fill dialog for a template slot ── */
+function toggleStplFillDropdown(e){if(e)e.stopPropagation();const dd=document.getElementById('stplfill-dd');if(dd)dd.classList.toggle('open');}
+function closeStplFillDropdown(){const dd=document.getElementById('stplfill-dd');if(dd)dd.classList.remove('open');}
+document.addEventListener('click',function(ev){
+  const dd=document.getElementById('stplfill-dd'),btn=document.getElementById('stplfill-select-btn');
+  if(!dd||!btn)return;
+  if(dd.contains(ev.target)||btn.contains(ev.target))return;
+  dd.classList.remove('open');
+});
+function openStplFill(slotId){
+  const s=shiftTemplates.find(x=>x.id===slotId);if(!s)return;
+  stplFillSlotId=slotId;
+  stplFillMemberId=stplDraft[slotId]||null;
+  document.getElementById('stplfill-title').textContent='Fill Shift — '+DS[s.day];
+  document.getElementById('stplfill-sub').textContent=rn(s.deptId)+' · '+s.label+'  (every '+DF[s.day]+')';
+  document.getElementById('stplfill-clear').style.display=stplFillMemberId?'inline-flex':'none';
+  renderStplFillDropdown();
+  updateStplFillLabel();
+  renderStplFillWarn();
+  closeStplFillDropdown();
+  document.getElementById('modal-stplfill').classList.add('open');
+}
+function renderStplFillDropdown(){
+  const dd=document.getElementById('stplfill-dd');if(!dd)return;
+  const s=shiftTemplates.find(x=>x.id===stplFillSlotId);
+  const groupDefs=roles.concat([{id:null,name:'No department',colors:RP[7]}]);
+  let h='';
+  groupDefs.forEach(r=>{
+    const list=members.filter(m=>r.id===null?(!m.defaultRole||!roles.some(x=>x.id===m.defaultRole)):m.defaultRole===r.id);
+    if(!list.length)return;
+    const c=r.colors;
+    h+=`<div class="as-dd-group" style="background:${c.bg};color:${c.text};"><span style="display:flex;align-items:center;gap:7px;"><span class="as-dd-dot" style="background:${c.border};"></span>${r.name}</span><span class="as-dd-group-count">${list.length}</span></div>`;
+    list.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(m=>{
+      // templates allow anyone; we only surface soft notes
+      const notes=[];
+      if(s&&s.deptId&&!empTrainedFor(m,s.deptId))notes.push('Not trained for '+rn(s.deptId));
+      if(s&&s.label&&!empAllowsShift(m,s.label))notes.push('Outside usual shifts');
+      const lvl=notes.length?'warn':'ok';
+      const max=m.maxHours||40;
+      h+=`<button type="button" class="as-dd-row${m.id===stplFillMemberId?' sel':''}" onclick="selectStplFillMember(${m.id})">
+        <span><span class="as-dd-name">${m.name}${m.favorite?' ★':''}</span>${notes.length?`<div class="as-dd-reason warn">${notes.join(' · ')}</div>`:''}</span>
+        <span class="as-hpill ${lvl}">max ${max}h</span>
+      </button>`;
+    });
+  });
+  dd.innerHTML=h||'<div style="padding:14px;font-size:12.5px;color:var(--text-secondary);">No employees</div>';
+}
+function selectStplFillMember(id){
+  stplFillMemberId=id;
+  closeStplFillDropdown();
+  updateStplFillLabel();
+  renderStplFillDropdown();
+  renderStplFillWarn();
+}
+function updateStplFillLabel(){
+  const el=document.getElementById('stplfill-select-label');if(!el)return;
+  const m=members.find(x=>x.id===stplFillMemberId);
+  if(m){el.textContent=m.name+(m.favorite?' ★':'');el.classList.remove('as-select-placeholder');}
+  else{el.textContent='Select employee…';el.classList.add('as-select-placeholder');}
+}
+// Warn if this person is already pinned to an overlapping slot on the same weekday
+function stplOverlaps(memberId,slot){
+  const out=[];
+  Object.keys(stplDraft).forEach(k=>{
+    const tid=parseInt(k);
+    if(tid===slot.id)return;
+    if(stplDraft[tid]!==memberId)return;
+    const other=shiftTemplates.find(x=>x.id===tid);
+    if(!other||other.day!==slot.day)return;
+    if(slot.startH<other.endH&&other.startH<slot.endH)out.push(other);
+  });
+  return out;
+}
+function renderStplFillWarn(){
+  const el=document.getElementById('stplfill-warn');if(!el)return;
+  const s=shiftTemplates.find(x=>x.id===stplFillSlotId);
+  const m=members.find(x=>x.id===stplFillMemberId);
+  if(!s||!m){el.innerHTML='';return;}
+  const notes=[];
+  if(s.deptId&&!empTrainedFor(m,s.deptId))notes.push('Not trained for '+rn(s.deptId));
+  if(s.label&&!empAllowsShift(m,s.label))notes.push('Outside their usual shifts');
+  const ov=stplOverlaps(m.id,s);
+  if(ov.length)notes.push('Overlaps '+ov.map(o=>o.label).join(', ')+' the same day');
+  if(notes.length){el.innerHTML='⚠ '+notes.join(' · ')+' — allowed, just confirming.';el.style.color='#8A5A00';}
+  else{el.innerHTML='<span style="color:#166534;">✓ Looks good</span>';}
+}
+function saveStplSlot(){
+  if(!stplFillSlotId)return;
+  if(!stplFillMemberId){alert('Choose an employee, or use "Clear slot" to leave it open.');return;}
+  const s=shiftTemplates.find(x=>x.id===stplFillSlotId);
+  const ov=stplOverlaps(stplFillMemberId,s);
+  if(ov.length){
+    const m=members.find(x=>x.id===stplFillMemberId);
+    if(!confirm(m.name+' is already on '+ov.map(o=>o.label).join(', ')+' this same day, which overlaps this shift.\n\nAdd anyway?'))return;
+  }
+  stplDraft[stplFillSlotId]=stplFillMemberId;
+  closeModal('stplfill');
+  renderStplGrid();
+}
+function clearStplSlot(){
+  if(!stplFillSlotId)return;
+  delete stplDraft[stplFillSlotId];
+  closeModal('stplfill');
+  renderStplGrid();
+}
+function clearStplSlotInline(slotId,ev){
+  if(ev){ev.stopPropagation();ev.preventDefault();}
+  delete stplDraft[slotId];
+  renderStplGrid();
 }
 function saveSchedTemplate(){
   const name=document.getElementById('stpl-name').value.trim();
   if(!name){alert('Give the template a name.');return;}
-  const assignments=[];
-  document.querySelectorAll('#stpl-slots .stpl-slot-sel').forEach(sel=>{
-    const mid=parseInt(sel.value);
-    if(mid)assignments.push({templateId:parseInt(sel.dataset.tplid),memberId:mid});
-  });
+  const assignments=Object.keys(stplDraft).map(k=>({templateId:parseInt(k),memberId:stplDraft[k]}));
   if(editingSchedTemplate){
     const t=scheduleTemplates.find(x=>x.id===editingSchedTemplate);
     if(t){t.name=name;t.assignments=assignments;}
