@@ -95,8 +95,6 @@ input[type=text],input[type=number],input[type=time],input[type=date],select{fon
 .hist-chip.active .hist-chip-label{color:#fff;}
 .hist-chip.active .hist-chip-del{color:rgba(255,255,255,.75);border-left-color:rgba(255,255,255,.25);}
 
-.filter-popover{display:none;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:16px;gap:14px;flex-direction:column;}
-.filter-popover.open{display:flex;}
 .filter-label{font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
 .filter-row{display:flex;gap:6px;flex-wrap:wrap;}
 .fchip{padding:5px 12px;font-size:12px;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text-secondary);}
@@ -115,9 +113,43 @@ input[type=text],input[type=number],input[type=time],input[type=date],select{fon
 .view-dd-item.sel .view-dd-check{visibility:visible;}
 
 /* ───── STICKY WEEK BAR + DAY HEADERS ───── */
-.weekbar{position:sticky;top:0;z-index:30;background:#fff;border:1px solid var(--border);
+.stickyblock{position:sticky;top:0;z-index:30;background:var(--bg-page);box-shadow:0 4px 8px -6px rgba(20,20,50,.35);}
+.weekbar{background:#fff;border:1px solid var(--border);
   border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:space-between;
-  gap:10px;padding:8px 14px;margin-bottom:14px;box-shadow:0 2px 8px -4px rgba(20,20,50,.2);}
+  gap:10px;padding:8px 14px;margin-bottom:8px;}
+.dayhead-row{display:grid;gap:10px;}
+.dayhead-cell{background:var(--bg-page);border:1px solid var(--border);border-bottom:1px solid var(--border-soft);
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;text-align:center;padding:10px 4px 8px;}
+.dayhead-cell.today{background:#EEEBFD;border-color:#C9C4F7;}
+
+/* ── Employee filter dropdown ── */
+.emp-dd{display:none;position:absolute;top:100%;left:0;margin-top:5px;width:340px;background:#fff;
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:0 14px 34px -10px rgba(20,20,50,.34);z-index:70;overflow:hidden;}
+.emp-dd.open{display:block;}
+.emp-dd-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;
+  border-bottom:1px solid var(--border-soft);background:var(--bg-page);}
+.emp-dd-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);}
+.emp-dd-clear{font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600;}
+.emp-all{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border:none;background:#fff;
+  cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:var(--text-primary);text-align:left;
+  border-bottom:1px solid var(--border-soft);}
+.emp-all:hover{background:var(--bg-page);}
+.emp-all.sel{background:#F4F3FE;color:var(--accent);}
+.emp-dd-list{max-height:260px;overflow-y:auto;}
+.emp-grp{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:10.5px;
+  font-weight:700;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0;z-index:1;}
+.emp-grp-dot{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:6px;}
+.emp-item{display:flex;align-items:center;gap:9px;width:100%;padding:8px 12px;border:none;background:#fff;
+  cursor:pointer;font-family:inherit;font-size:12.5px;color:var(--text-primary);text-align:left;
+  border-top:1px solid var(--border-soft);}
+.emp-item:hover{background:var(--bg-page);}
+.emp-item.sel{background:#F4F3FE;}
+.cbox{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
+.emp-item.sel .cbox,.emp-all.sel .cbox{background:var(--accent);border-color:var(--accent);}
+.emp-dd-foot{padding:8px 12px;border-top:1px solid var(--border-soft);background:var(--bg-page);
+  font-size:11px;color:var(--text-secondary);}
 .weekbar-nav{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;}
 .weekbar-nav #period-lbl{min-width:200px;text-align:center;}
 .weekbar-actions{display:flex;gap:7px;}
@@ -129,10 +161,8 @@ input[type=text],input[type=number],input[type=time],input[type=date],select{fon
 
 /* ───── WEEK / DAY CARD VIEW ───── */
 .week-grid{display:grid;gap:10px;align-items:start;}
-.day-col{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);display:flex;flex-direction:column;}
-.day-col-head{padding:10px 8px;text-align:center;border-bottom:1px solid var(--border-soft);background:var(--bg-page);
-  position:sticky;top:56px;z-index:20;border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow:0 4px 6px -5px rgba(20,20,50,.35);}
+.day-col{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);display:flex;flex-direction:column;}
+.day-col-head{display:none;}
 .day-col-head.today{background:#EEEBFD;}
 .day-name{font-size:10.5px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;}
 .day-num{font-size:17px;font-weight:700;color:var(--text-primary);line-height:1.3;}
@@ -161,7 +191,7 @@ input[type=text],input[type=number],input[type=time],input[type=date],select{fon
 
 /* ───── MONTH VIEW ───── */
 .mo-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);}
-.mo-dh{text-align:center;font-size:11px;font-weight:600;color:var(--text-secondary);padding:8px 0;border-bottom:1px solid var(--border-soft);background:var(--bg-page);position:sticky;top:56px;z-index:20;box-shadow:0 4px 6px -5px rgba(20,20,50,.35);}
+.mo-dh{text-align:center;font-size:11px;font-weight:600;color:var(--text-secondary);padding:8px 0;border-bottom:1px solid var(--border-soft);background:var(--bg-page);}
 .mo-cell{position:relative;border-top:1px solid var(--border-soft);border-left:1px solid var(--border-soft);min-height:82px;padding:4px;}
 .mo-cell:nth-child(7n+1){border-left:none;}
 .mo-dn{font-size:11px;color:var(--text-secondary);margin-bottom:3px;font-weight:600;}
@@ -466,7 +496,18 @@ create policy "anon delete" on scheduler_kv for delete using (true);</pre>
           <button class="btn open-toggle-btn on" id="open-shifts-btn" onclick="toggleOpenShifts()">⚠️ Open Shifts</button>
           <button class="btn" onclick="openHoursModal()">🕐 Total Hours</button>
           <button class="btn" onclick="exportToExcel()">📊 Export to Excel</button>
-          <button class="btn" id="filter-btn" onclick="toggleFilter()">🔽 Filter</button>
+          <div style="position:relative;display:inline-block;">
+            <button class="btn" id="emp-filter-btn" onclick="toggleEmpDropdown(event)">👥 Employee: <b id="emp-filter-label">All</b> <span class="as-caret" style="margin-left:2px;">▾</span></button>
+            <div class="emp-dd" id="emp-dd">
+              <div class="emp-dd-head">
+                <span class="emp-dd-title">Filter by employee</span>
+                <button class="emp-dd-clear" onclick="resetEmpFilter(event)">Reset to All</button>
+              </div>
+              <button class="emp-all" id="emp-all-btn" onclick="toggleFilterAll(event)"><span class="cbox"></span><span>All employees</span></button>
+              <div class="emp-dd-list" id="emp-filter"></div>
+              <div class="emp-dd-foot" id="emp-dd-foot"></div>
+            </div>
+          </div>
           <div style="position:relative;display:inline-block;">
             <button class="btn" id="sort-btn" onclick="toggleViewDropdown(event)">☰ View: By Role <span class="as-caret" style="margin-left:2px;">▾</span></button>
             <div class="view-dd" id="view-dd">
@@ -477,28 +518,6 @@ create policy "anon delete" on scheduler_kv for delete using (true);</pre>
           </div>
           <button class="btn" id="editmode-btn" onclick="toggleEditMode()">✏️ Edit Shifts</button>
           <button class="btn danger" onclick="resetWeek()">↺ Reset</button>
-        </div>
-      </div>
-
-      <div class="filter-popover" id="filter-popover">
-        <div>
-          <div class="filter-label">Filter by employees</div>
-          <div style="margin-bottom:8px;">
-            <button class="fchip" id="efc-all" onclick="toggleFilterAll()" style="font-weight:700;">All</button>
-          </div>
-          <div class="filter-row" id="emp-filter"></div>
-        </div>
-      </div>
-
-      <div class="weekbar" id="weekbar">
-        <div class="weekbar-nav">
-          <button class="btn sm" onclick="navCal(-1)">◀</button>
-          <span id="period-lbl"></span>
-          <button class="btn sm" onclick="navCal(1)">▶</button>
-        </div>
-        <div class="weekbar-actions">
-          <button class="btn sm" onclick="goToday()">Today</button>
-          <button class="btn sm" id="editmode-btn-2" onclick="toggleEditMode()">✏️ Edit Shifts</button>
         </div>
       </div>
 
@@ -514,6 +533,20 @@ create policy "anon delete" on scheduler_kv for delete using (true);</pre>
         <div class="hist-chips-row" id="hist-chips"></div>
       </div>
 
+      <div class="stickyblock" id="stickyblock">
+        <div class="weekbar" id="weekbar">
+          <div class="weekbar-nav">
+            <button class="btn sm" onclick="navCal(-1)">◀</button>
+            <span id="period-lbl"></span>
+            <button class="btn sm" onclick="navCal(1)">▶</button>
+          </div>
+          <div class="weekbar-actions">
+            <button class="btn sm" onclick="goToday()">Today</button>
+            <button class="btn sm" id="editmode-btn-2" onclick="toggleEditMode()">✏️ Edit Shifts</button>
+          </div>
+        </div>
+        <div class="dayhead-row" id="dayhead-row"></div>
+      </div>
       <div id="cal-out"></div>
     </div>
 
@@ -947,7 +980,7 @@ function handleRemoteUpdate(){
     if(document.querySelector('.modal-wrap.open'))return; // don't yank data out from under an open dialog
     const ok=await loadFromStorage();
     if(ok){
-      activeM=new Set(members.map(m=>m.id));
+      filterAll=true;activeM=new Set();
       const k=wk(anchor),hist=histMap[k]||[];
       if(hist.length){const ae=hist.find(h=>h.id===activeHistId)||hist[hist.length-1];activeHistId=ae.id;schedule=dc(ae.schedule);}
       renderCurrent();
@@ -1005,9 +1038,9 @@ const ROSTER_REPAIR_MAP={"kayden":{"defaultRole":1,"deptIds":[1],"minHours":36,"
 const ROSTER_REMOVED_NAMES=["christine fellner","derek bassett","haylie youngblood","jaxon gurr","kim howard","syd lynn","ty williams"];
 let roles=[], members=[], shiftTemplates=[], nMId=34, nRId=5, nTId=98;
 let timeoffs=[], schedule={}, histMap={}, activeHistId=null;
-const APP_VERSION='v2.0.1';
+const APP_VERSION='v2.1';
 const APP_VERSION_DATE='2026-09-09';
-const APP_VERSION_NOTES='View dropdown (By Role default) · Sticky week bar + day headers · Template grid editor · Time-off date ranges · Filter All toggle · Days Scheduled · By Role view · Total Hours breakdown · Schedule templates';
+const APP_VERSION_NOTES='Employee filter dropdown · Solid sticky header · View dropdown (By Role default) · Sticky week bar + day headers · Template grid editor · Time-off date ranges · Filter All toggle · Days Scheduled · By Role view · Total Hours breakdown · Schedule templates';
 let calView='week';
 let scheduleTemplates=[], nSTId=1, editingSchedTemplate=null;
 let currentSection='schedule';
@@ -1065,7 +1098,6 @@ function shouldShowShift(s){
   if(activeRoles.size===0)return true;
   return activeRoles.has(s.role);
 }
-function toggleFilter(){const el=document.getElementById('filter-popover');el.classList.toggle('open');}
 function toggleViewDropdown(e){
   if(e){e.stopPropagation();e.preventDefault();}
   const dd=document.getElementById('view-dd');
@@ -1808,15 +1840,58 @@ function saveAddShift(){
 
 /* ─────── FILTER + LEGEND ─────── */
 let filterAll=true;
-function buildEmpFilter(){
-  const allBtn=document.getElementById('efc-all');
-  if(allBtn)allBtn.classList.toggle('on',filterAll);
-  document.getElementById('emp-filter').innerHTML=members.map(m=>`<button class="fchip${(!filterAll&&activeM.has(m.id))?' on':''}" id="efc-${m.id}" onclick="tEF(${m.id})">${m.name}</button>`).join('')||'<div style="font-size:12px;color:var(--text-secondary);">No employees yet</div>';
+function toggleEmpDropdown(e){
+  if(e){e.stopPropagation();e.preventDefault();}
+  const dd=document.getElementById('emp-dd');
+  if(dd)dd.classList.toggle('open');
 }
-function toggleFilterAll(){
+function closeEmpDropdown(){const dd=document.getElementById('emp-dd');if(dd)dd.classList.remove('open');}
+document.addEventListener('click',function(ev){
+  const dd=document.getElementById('emp-dd'),btn=document.getElementById('emp-filter-btn');
+  if(!dd||!dd.classList.contains('open'))return;
+  if(btn&&btn.contains(ev.target))return;
+  if(dd.contains(ev.target))return;      // items handle their own clicks
+  dd.classList.remove('open');
+});
+function buildEmpFilter(){
+  const listEl=document.getElementById('emp-filter');
+  if(!listEl)return;
+  let h='';
+  const groups=roles.concat([{id:null,name:'No department',colors:RP[7]}]);
+  groups.forEach(r=>{
+    const list=members.filter(m=>r.id===null?(!m.defaultRole||!roles.some(x=>x.id===m.defaultRole)):m.defaultRole===r.id);
+    if(!list.length)return;
+    const c=r.colors;
+    h+=`<div class="emp-grp" style="background:${c.bg};color:${c.text};"><span><i class="emp-grp-dot" style="background:${c.border}"></i>${r.name}</span><span style="opacity:.75;">${list.length}</span></div>`;
+    list.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(m=>{
+      const on=!filterAll&&activeM.has(m.id);
+      h+=`<button type="button" class="emp-item${on?' sel':''}" data-empid="${m.id}"><span class="cbox">${on?'✓':''}</span><span>${m.name}${m.favorite?' <span class="sc-star">★</span>':''}</span></button>`;
+    });
+  });
+  listEl.innerHTML=h||'<div style="padding:12px;font-size:12px;color:var(--text-secondary);">No employees yet</div>';
+  listEl.querySelectorAll('.emp-item').forEach(it=>{
+    it.onclick=function(ev){ev.stopPropagation();ev.preventDefault();tEF(parseInt(it.dataset.empid));};
+  });
+  const allBtn=document.getElementById('emp-all-btn');
+  if(allBtn){
+    allBtn.classList.toggle('sel',filterAll);
+    allBtn.querySelector('.cbox').textContent=filterAll?'✓':'';
+  }
+  const lbl=document.getElementById('emp-filter-label');
+  if(lbl)lbl.textContent=filterAll?'All':(activeM.size?activeM.size+' selected':'None');
+  const foot=document.getElementById('emp-dd-foot');
+  if(foot)foot.textContent=filterAll?('Showing all '+members.length+' employees')
+    :(activeM.size?('Showing '+activeM.size+' of '+members.length+' employees'):'No employees selected — nothing will show');
+}
+function toggleFilterAll(e){
+  if(e){e.stopPropagation();e.preventDefault();}
   filterAll=!filterAll;
-  if(filterAll)activeM=new Set();       // All-mode: everyone shows (see shouldShow)
-  else activeM=new Set();               // All off, none individually picked yet → nobody shows
+  activeM=new Set();                    // All on → everyone; All off → nobody until you pick
+  renderCal();
+}
+function resetEmpFilter(e){
+  if(e){e.stopPropagation();e.preventDefault();}
+  filterAll=true;activeM=new Set();
   renderCal();
 }
 function tEF(id){
@@ -1896,6 +1971,16 @@ function renderWeekCards(){
   } else {
     document.getElementById('period-lbl').textContent=dates[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+dates[6].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   }
+  // sticky day headers live outside cal-out so they pin with the week bar
+  const hr=document.getElementById('dayhead-row');
+  if(hr){
+    hr.style.display='grid';
+    hr.style.gridTemplateColumns='repeat('+dates.length+',1fr)';
+    hr.innerHTML=dates.map(date=>{
+      const isT2=fmt(date)===fmt(t);
+      return `<div class="dayhead-cell${isT2?' today':''}"><div class="day-name">${DS[date.getDay()]}</div><div class="day-num${isT2?' today':''}">${date.getDate()}</div></div>`;
+    }).join('');
+  }
   let html=`<div class="week-grid" style="grid-template-columns:repeat(${dates.length},1fr);">`;
   dates.forEach(date=>{
     const ds=fmt(date),isT=ds===fmt(t);
@@ -1942,6 +2027,8 @@ function renderWeekCards(){
 }
 
 function renderMonth(){
+  const hr0=document.getElementById('dayhead-row');
+  if(hr0){hr0.style.display='none';hr0.innerHTML='';}
   const y=anchor.getFullYear(),mo=anchor.getMonth(),fd=new Date(y,mo,1).getDay(),dim=new Date(y,mo+1,0).getDate(),t=tod();
   document.getElementById('period-lbl').textContent=MN[mo]+' '+y;
   let cells=[];for(let i=0;i<fd;i++)cells.push({date:new Date(y,mo,1-fd+i),om:true});for(let i=1;i<=dim;i++)cells.push({date:new Date(y,mo,i),om:false});const rem=(7-cells.length%7)%7;for(let i=1;i<=rem;i++)cells.push({date:new Date(y,mo+1,i),om:true});
@@ -2674,7 +2761,7 @@ async function repairRosterIfNeeded(){
 async function init(){
   await loadFromStorage();
   await repairRosterIfNeeded();
-  activeM=new Set(members.map(m=>m.id));
+  filterAll=true;activeM=new Set();
   activeRoles=new Set();
   const k=wk(anchor),hist=histMap[k]||[];
   if(hist.length){const ae=hist.find(h=>h.id===activeHistId)||hist[hist.length-1];activeHistId=ae.id;schedule=dc(ae.schedule);}
