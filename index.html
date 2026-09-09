@@ -102,6 +102,18 @@ input[type=text],input[type=number],input[type=time],input[type=date],select{fon
 .fchip{padding:5px 12px;font-size:12px;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text-secondary);}
 .fchip.on{color:var(--accent);background:#EDEBFC;border-color:#C9C4F7;}
 
+/* ───── VIEW DROPDOWN ───── */
+.view-dd{display:none;position:absolute;top:100%;left:0;margin-top:4px;min-width:170px;
+  background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:0 12px 30px -8px rgba(20,20,50,.3);z-index:60;overflow:hidden;}
+.view-dd.open{display:block;}
+.view-dd-item{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border:none;
+  background:#fff;cursor:pointer;font-family:inherit;font-size:13px;color:var(--text-primary);text-align:left;}
+.view-dd-item:hover{background:var(--bg-page);}
+.view-dd-item.sel{background:#F4F3FE;color:var(--accent);font-weight:600;}
+.view-dd-check{width:12px;font-size:11px;color:var(--accent);visibility:hidden;}
+.view-dd-item.sel .view-dd-check{visibility:visible;}
+
 /* ───── STICKY WEEK BAR + DAY HEADERS ───── */
 .weekbar{position:sticky;top:0;z-index:30;background:#fff;border:1px solid var(--border);
   border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:space-between;
@@ -455,7 +467,14 @@ create policy "anon delete" on scheduler_kv for delete using (true);</pre>
           <button class="btn" onclick="openHoursModal()">🕐 Total Hours</button>
           <button class="btn" onclick="exportToExcel()">📊 Export to Excel</button>
           <button class="btn" id="filter-btn" onclick="toggleFilter()">🔽 Filter</button>
-          <button class="btn" id="sort-btn" onclick="cycleView()">☰ View: Time</button>
+          <div style="position:relative;display:inline-block;">
+            <button class="btn" id="sort-btn" onclick="toggleViewDropdown(event)">☰ View: By Role <span class="as-caret" style="margin-left:2px;">▾</span></button>
+            <div class="view-dd" id="view-dd">
+              <button type="button" class="view-dd-item" data-view="role" onclick="setViewMode('role')"><span class="view-dd-check">✓</span><span>By Role</span></button>
+              <button type="button" class="view-dd-item" data-view="time" onclick="setViewMode('time')"><span class="view-dd-check">✓</span><span>By Time</span></button>
+              <button type="button" class="view-dd-item" data-view="name" onclick="setViewMode('name')"><span class="view-dd-check">✓</span><span>By Name</span></button>
+            </div>
+          </div>
           <button class="btn" id="editmode-btn" onclick="toggleEditMode()">✏️ Edit Shifts</button>
           <button class="btn danger" onclick="resetWeek()">↺ Reset</button>
         </div>
@@ -986,9 +1005,9 @@ const ROSTER_REPAIR_MAP={"kayden":{"defaultRole":1,"deptIds":[1],"minHours":36,"
 const ROSTER_REMOVED_NAMES=["christine fellner","derek bassett","haylie youngblood","jaxon gurr","kim howard","syd lynn","ty williams"];
 let roles=[], members=[], shiftTemplates=[], nMId=34, nRId=5, nTId=98;
 let timeoffs=[], schedule={}, histMap={}, activeHistId=null;
-const APP_VERSION='v1.9';
+const APP_VERSION='v2.0';
 const APP_VERSION_DATE='2026-09-09';
-const APP_VERSION_NOTES='Sticky week bar + day headers · Template grid editor · Time-off date ranges · Filter All toggle · Days Scheduled · By Role view · Total Hours breakdown · Schedule templates';
+const APP_VERSION_NOTES='View dropdown (By Role default) · Sticky week bar + day headers · Template grid editor · Time-off date ranges · Filter All toggle · Days Scheduled · By Role view · Total Hours breakdown · Schedule templates';
 let calView='week';
 let scheduleTemplates=[], nSTId=1, editingSchedTemplate=null;
 let currentSection='schedule';
@@ -1000,7 +1019,7 @@ let editMode=false, emFav=false;
 let sbDeptTab=null, editingTemplateId=null, tplDeptId=null, tplDay=0;
 let lastSavedAt=null;
 let showOpenShifts=true, fillingTemplateId=null;
-let sortMode='time';
+let sortMode='role';   // default view is By Role
 let _saveTimer=null;
 
 async function persist(){try{const data={roles,members,shiftTemplates,scheduleTemplates,nMId,nRId,nTId,nSTId,timeoffs,histMap,activeHistId};await window.storage.set('scheduler_data',JSON.stringify(data));_localWriteStamp=Date.now();lastSavedAt=new Date().toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});refreshLastSavedLabel();showSaveIndicator();}catch(e){console.error('persist failed',e);}}
@@ -1047,11 +1066,31 @@ function shouldShowShift(s){
   return activeRoles.has(s.role);
 }
 function toggleFilter(){const el=document.getElementById('filter-popover');el.classList.toggle('open');}
-function cycleView(){
-  sortMode = sortMode==='time' ? 'name' : (sortMode==='name' ? 'role' : 'time');
-  const label = sortMode==='time' ? '☰ View: Time' : (sortMode==='name' ? '☰ View: Name' : '☰ View: By Role');
-  document.getElementById('sort-btn').innerHTML=label;
+function toggleViewDropdown(e){
+  if(e)e.stopPropagation();
+  const dd=document.getElementById('view-dd');
+  if(dd)dd.classList.toggle('open');
+}
+function closeViewDropdown(){const dd=document.getElementById('view-dd');if(dd)dd.classList.remove('open');}
+document.addEventListener('click',function(ev){
+  const dd=document.getElementById('view-dd'),btn=document.getElementById('sort-btn');
+  if(!dd||!btn)return;
+  if(btn.contains(ev.target))return;          // the trigger handles its own toggle
+  dd.classList.remove('open');                // any other click (incl. inside the menu) closes it
+});
+const VIEW_LABELS={role:'By Role',time:'By Time',name:'By Name'};
+function setViewMode(mode){
+  sortMode=mode;
+  closeViewDropdown();
+  refreshViewButton();
   renderCal();
+}
+function refreshViewButton(){
+  const btn=document.getElementById('sort-btn');
+  if(btn)btn.innerHTML='☰ View: '+(VIEW_LABELS[sortMode]||'By Role')+' <span class="as-caret" style="margin-left:2px;">▾</span>';
+  document.querySelectorAll('#view-dd .view-dd-item').forEach(it=>{
+    it.classList.toggle('sel',it.dataset.view===sortMode);
+  });
 }
 function deptOrder(roleId){
   const idx=roles.findIndex(r=>r.id===roleId);
@@ -2628,6 +2667,7 @@ async function init(){
   if(hist.length){const ae=hist.find(h=>h.id===activeHistId)||hist[hist.length-1];activeHistId=ae.id;schedule=dc(ae.schedule);}
   const vl=document.getElementById('app-version-label');
   if(vl)vl.textContent=APP_VERSION;
+  refreshViewButton();
   navigateTo('schedule');
   startRealtimeSync();
 }
