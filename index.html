@@ -122,7 +122,7 @@ input[type=text],input[type=number],input[type=time],input[type=date],select{fon
   border-radius:var(--radius-lg) var(--radius-lg) 0 0;text-align:center;padding:10px 4px 8px;}
 .dayhead-cell.today{background:#EEEBFD;border-color:#C9C4F7;}
 
-/* ── Employee filter dropdown ── */
+/* ── Template fix (slot IDs no longer reset) · Employee filter dropdown ── */
 .emp-dd{display:none;position:absolute;top:100%;left:0;margin-top:5px;width:340px;background:#fff;
   border:1px solid var(--border);border-radius:var(--radius-lg);
   box-shadow:0 14px 34px -10px rgba(20,20,50,.34);z-index:70;overflow:hidden;}
@@ -1038,9 +1038,9 @@ const ROSTER_REPAIR_MAP={"kayden":{"defaultRole":1,"deptIds":[1],"minHours":36,"
 const ROSTER_REMOVED_NAMES=["christine fellner","derek bassett","haylie youngblood","jaxon gurr","kim howard","syd lynn","ty williams"];
 let roles=[], members=[], shiftTemplates=[], nMId=34, nRId=5, nTId=98;
 let timeoffs=[], schedule={}, histMap={}, activeHistId=null;
-const APP_VERSION='v2.1';
+const APP_VERSION='v2.1.1';
 const APP_VERSION_DATE='2026-09-09';
-const APP_VERSION_NOTES='Employee filter dropdown · Solid sticky header · View dropdown (By Role default) · Sticky week bar + day headers · Template grid editor · Time-off date ranges · Filter All toggle · Days Scheduled · By Role view · Total Hours breakdown · Schedule templates';
+const APP_VERSION_NOTES='Template fix (slot IDs no longer reset) · Employee filter dropdown · Solid sticky header · View dropdown (By Role default) · Sticky week bar + day headers · Template grid editor · Time-off date ranges · Filter All toggle · Days Scheduled · By Role view · Total Hours breakdown · Schedule templates';
 let calView='week';
 let scheduleTemplates=[], nSTId=1, editingSchedTemplate=null;
 let currentSection='schedule';
@@ -1235,13 +1235,22 @@ function genSchedule(schedTemplate){
   let templateSkips=[];
   if(schedTemplate&&schedTemplate.assignments&&schedTemplate.assignments.length){
     schedTemplate.assignments.forEach(a=>{
-      const slotObj=slotList.find(s=>s.template.id===a.templateId);
+      // Match by slot id first; if the id no longer exists (templates were rebuilt),
+      // fall back to matching the same day + times + department so saved templates survive.
+      let slotObj=slotList.find(s=>s.template.id===a.templateId);
+      if(!slotObj&&a.day!==undefined){
+        slotObj=slotList.find(s=>s.di===a.day&&s.template.startH===a.startH&&s.template.endH===a.endH&&s.template.deptId===a.deptId&&!isSlotFilled(s));
+      }
       if(!slotObj)return;
       const emp=members.find(m=>m.id===a.memberId);
       if(!emp)return;
-      if(getTO(emp.id,slotObj.ds)){templateSkips.push({name:emp.name,day:DS[slotObj.di]});return;} // on time off → leave open
-      if(checkEligibility(emp,slotObj))assignEmpToSlot(emp,slotObj,'From template');
-      else templateSkips.push({name:emp.name,day:DS[slotObj.di]});
+      if(getTO(emp.id,slotObj.ds)){templateSkips.push({name:emp.name,day:DS[slotObj.di],why:'on time off'});return;} // on time off → leave open
+      // A template pin is an explicit choice, so it overrides the soft rules the auto-filler
+      // uses (allowed-shift lists, department training). Only real conflicts skip it:
+      // already working that day, or the slot is somehow taken.
+      if(isSlotFilled(slotObj)){templateSkips.push({name:emp.name,day:DS[slotObj.di],why:'slot already filled'});return;}
+      if(!empIsFreeThatDay(emp.id,slotObj.ds)){templateSkips.push({name:emp.name,day:DS[slotObj.di],why:'already scheduled that day'});return;}
+      assignEmpToSlot(emp,slotObj,'From template');
     });
   }
 
@@ -1273,7 +1282,7 @@ function genSchedule(schedTemplate){
   const unfilled=slotList.filter(s=>!isSlotFilled(s)).map(s=>({day:DS[s.di],label:s.template.label,dept:rn(s.template.deptId)}));
   const warnEl=document.getElementById('gen-warning');
   let msg='';
-  if(templateSkips.length)msg+=`<div style="font-weight:700;margin-bottom:3px;">ℹ Template adjusted for time off:</div><div style="margin-bottom:${(unmet.length||unfilled.length)?'8':'0'}px;">`+templateSkips.map(u=>`${u.name} (${u.day}) was on time off — their slot was left open and auto-filled if possible.`).join('<br>')+'</div>';
+  if(templateSkips.length)msg+=`<div style="font-weight:700;margin-bottom:3px;">ℹ Template adjustments:</div><div style="margin-bottom:${(unmet.length||unfilled.length)?'8':'0'}px;">`+templateSkips.map(u=>`${u.name} (${u.day}) — ${u.why||'unavailable'}; slot left open and auto-filled if possible.`).join('<br>')+'</div>';
   if(unmet.length)msg+=`<div style="font-weight:700;margin-bottom:3px;">⚠ Could not meet minimum hours for ${unmet.length} employee${unmet.length>1?'s':''}:</div><div style="margin-bottom:${unfilled.length?'8':'0'}px;">`+unmet.map(u=>`${u.name}: ${u.got}h scheduled (needs ${u.min}h)`).join('<br>')+'</div>';
   if(unfilled.length)msg+=`<div style="font-weight:700;margin-bottom:3px;">⚠ ${unfilled.length} shift${unfilled.length>1?'s':''} couldn't be filled automatically.</div><div>They're marked <strong>Open</strong> in the schedule below — click "+ Fill shift" on any of them to assign someone manually.</div>`;
   if(msg){warnEl.innerHTML=msg;warnEl.style.display='block';}else warnEl.style.display='none';
@@ -1459,7 +1468,14 @@ function clearStplSlotInline(slotId,ev){
 function saveSchedTemplate(){
   const name=document.getElementById('stpl-name').value.trim();
   if(!name){alert('Give the template a name.');return;}
-  const assignments=Object.keys(stplDraft).map(k=>({templateId:parseInt(k),memberId:stplDraft[k]}));
+  const assignments=Object.keys(stplDraft).map(k=>{
+    const tid=parseInt(k);
+    const s=shiftTemplates.find(x=>x.id===tid);
+    const base={templateId:tid,memberId:stplDraft[k]};
+    // snapshot the slot's identity so the assignment still resolves if IDs are rebuilt
+    if(s){base.day=s.day;base.startH=s.startH;base.endH=s.endH;base.deptId=s.deptId;base.label=s.label;}
+    return base;
+  });
   if(editingSchedTemplate){
     const t=scheduleTemplates.find(x=>x.id===editingSchedTemplate);
     if(t){t.name=name;t.assignments=assignments;}
@@ -2726,10 +2742,13 @@ async function repairRosterIfNeeded(){
     if(!m.preferred)m.preferred='Any';
     changed=true;
   });
-  // Shift templates must stay in sync with employees' allowedShifts labels
-  shiftTemplates=JSON.parse(JSON.stringify(DEFAULT_SHIFT_TEMPLATES));
-  nTId=shiftTemplates.length?Math.max(...shiftTemplates.map(t=>t.id))+1:1;
-  changed=true;
+  // Shift templates: only seed them if none exist. Do NOT overwrite on every load —
+  // doing so reassigns slot IDs and silently breaks saved schedule-template assignments.
+  if(!shiftTemplates||!shiftTemplates.length){
+    shiftTemplates=JSON.parse(JSON.stringify(DEFAULT_SHIFT_TEMPLATES));
+    nTId=shiftTemplates.length?Math.max(...shiftTemplates.map(t=>t.id))+1:1;
+    changed=true;
+  }
 
   // Add anyone on the roster who isn't in local data yet
   const existingNames=new Set(members.map(m=>(m.name||'').trim().toLowerCase()));
